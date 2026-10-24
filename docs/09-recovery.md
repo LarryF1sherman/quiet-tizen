@@ -69,8 +69,11 @@ tv exec --script recipes/restore-launcher.sh \
 Replace the uppercase placeholders. All three happened to be
 `com.samsung.tv.csfs` on the documented TV; do not assume that on another one.
 
-This returns routing to the saved handlers, restores the original Bixby
-Promotion assembly/cache and restores its selected registry flags.
+This returns routing to the saved handlers, restores the original container
+assembly/cache (read from `launcher-container.txt`; backups from the first
+U8000F release fall back to Bixby Promotion) and restores its selected
+registry flags. To undo only a later look or layout change, roll back that
+update instead: `update-launcher.sh rollback home-01 UPDATE_NAME`.
 Extra Quiet Home resources are left inert for inspection/recovery; they are
 not a running background service. Removing them is optional after successful
 restoration.

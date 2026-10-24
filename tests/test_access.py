@@ -8,7 +8,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from tv import check_identity, decode_pull, private_path, PROFILE
+import subprocess
+from tv import check_identity, decode_pull, private_path, script_command, PROFILE
 
 
 class AccessTests(unittest.TestCase):
@@ -20,6 +21,21 @@ class AccessTests(unittest.TestCase):
             check_identity(PROFILE["model"], "ANOTHER_FIRMWARE")
         with self.assertRaises(ValueError):
             check_identity(PROFILE["model"], None)
+
+    def test_profiles_do_not_accept_each_others_firmware(self):
+        qn80f = check_identity("QE55QN80FAUXXH", "T-PTMFDEUC-0090-1301.0")
+        self.assertEqual(qn80f["launcher"]["app_id"], "com.samsung.tv.AICompanionUI")
+        with self.assertRaises(ValueError):
+            check_identity("QE55QN80FAUXXH", PROFILE["firmware"])
+        with self.assertRaises(ValueError):
+            check_identity(PROFILE["model"], "T-PTMFDEUC-0090-1301.0")
+
+    def test_script_command_runs_script_with_arguments(self):
+        script = b"#!/bin/sh\nset -eu\nprintf 'ran:%s:%s\\n' \"$1\" \"$2\"\nexit 3\n"
+        result = subprocess.run(["/bin/sh", "-c", script_command(script, ["a b", "c'd"])],
+                                capture_output=True, text=True)
+        self.assertEqual(result.stdout, "ran:a b:c'd\n")
+        self.assertEqual(result.returncode, 3)
 
     def test_transfer_integrity(self):
         payload = b"synthetic contents only" * 100

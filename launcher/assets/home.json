@@ -1,0 +1,20 @@
+{
+  "Theme": "light",
+  "Clock": "h:mm tt",
+  "Hero": {
+    "Label": "PlayStation 5", "Action": "hdmi:14", "Description": "Game console · HDMI 2",
+    "Image": "feature-ps5.svg", "Kicker": "PLAYSTATION 5", "Headline": "Let's play.", "Subline": "Switch to HDMI 2"
+  },
+  "Portraits": [
+    {"Label": "Nintendo Switch", "Action": "hdmi:15", "Description": "Game console · HDMI 3", "Image": "feature-switch.svg"},
+    {"Label": "HDMI 1", "Action": "hdmi:13", "Description": "External device", "Image": "feature-hdmi.svg"}
+  ],
+  "Dock": [
+    {"Label": "Netflix", "Action": "app:org.tizen.netflix-app", "Fallback": "netflix"},
+    {"Label": "YouTube", "Action": "app:com.samsung.tv.cobalt-yt", "Fallback": "youtube"},
+    {"Label": "Prime Video", "Action": "app:org.tizen.primevideo", "Fallback": "prime"},
+    {"Label": "PlayStation 5", "Action": "hdmi:14", "Fallback": "ps5"},
+    {"Label": "Nintendo Switch", "Action": "hdmi:15", "Fallback": "switch"},
+    {"Label": "Your Apps", "Action": "page:1", "Fallback": "apps"}
+  ]
+}

@@ -28,18 +28,37 @@ desktop/mobile SDK version just because it has a file with the same name.
 Do not commit the resulting assemblies.
 
 ```sh
-python3 tools/build.py launcher --framework .local/tv-framework
+python3 tools/build.py launcher --framework .local/tv-framework \
+  --profile profiles/YOUR-PROFILE.json
 ```
 
-This builds `BixbyPromotion.dll`, `QuickLaunch.dll` and `Probe.dll`, then
-assembles `.local/package/`. Public source cards are neutral text placeholders;
+The profile's `launcher` block names the container app and its entry
+assembly. The build compiles that ID into Quiet Home and the QuickLaunch
+bridge, names the Home assembly after it (for example `BixbyPromotion.dll`)
+and assembles `.local/package/` with a `container.txt` that the recipes check.
+Public source cards are neutral text placeholders;
 [optional publisher artwork](06-artwork.md) can be fetched before rebuilding.
 
 ## Adapt inputs and apps
 
-The original UI uses HDMI 2 as the wide PlayStation 5 card, HDMI 3 as the
+The Home page is described by `launcher/assets/home.json`: theme (`light` or
+`dark`), clock format, one wide card, two portrait cards, up to six dock slots
+and an optional `VoiceKey`. Actions are `app:APP_ID`, `hdmi:13`–`hdmi:16` or
+`page:0`–`page:2`. Copy it to the ignored `home.local.json` to customize;
+the build uses the local copy. An invalid layout falls back to a minimal
+Apps/Settings layout and reports `layout_error` in the state file. App cards
+use catalog artwork; input cards need an `Image`.
+
+The default layout uses HDMI 2 as the wide PlayStation 5 card, HDMI 3 as the
 Switch card, and HDMI 1 as the third card. Source IDs 14, 15 and 13 were observed
-on the tested TV. They are example wiring, not auto-discovery.
+on the U8000F; HDMI 4 was source 16 on the QN80F. They are example wiring,
+not auto-discovery. A mounted USB disk adds a tile to Your Apps that opens
+Samsung's media browser (`com.samsung.tv.mycontents`).
+
+`VoiceKey` takes a shared key grab on the remote's microphone key
+(`XF86BTVoice`) and performs the action, also while another app is in front.
+On the QN80F the voice components were disabled first; the shared grab
+coexists with the assistant service's own grab.
 
 Upload and run Probe to inspect sources and the current main-operation handler:
 
@@ -48,33 +67,47 @@ tv push .local/build/Probe/Probe.dll Probe.dll
 tv exec --command '/usr/bin/dotnet /home/owner/share/tmp/sdk_tools/quiet-tizen/Probe.dll'
 ```
 
-Edit labels, source actions, `RefreshSource`, `SourceIndex` and the default
-`lastSource` in `launcher/src/Home.cs` to match the actual devices. The library
-is read from `apps.json`; verify all app IDs against the TV. See
-[app configuration](06-artwork.md). Rebuild after source changes.
+Edit the layout's labels and source actions to match the actual devices. The
+library is read from `apps.json`; verify all app IDs against the TV. See
+[app configuration](06-artwork.md). Rebuild after changes.
 
 ## Install without changing Home yet
 
-The tested native-app container is **`com.samsung.tv.bixby-promotion`**.
-Its `BixbyPromotion.dll` is replaced with our assembly, while the package's
-existing identity, metadata and framework integration are retained. This
-replaces Bixby Promotion's function. It is not a store-signed standalone TPK.
+Quiet Home replaces the entry assembly of an existing native .NET app, keeping
+the package's identity, metadata and framework integration. It replaces that
+app's function. It is not a store-signed standalone TPK. Observed containers:
 
-Inspect the installed package, its owner/labels, original entry assembly and
-current registry flags first. This release's recipe requires the observed
-owner `201:0`. If the layout differs, stop and adapt the profile.
+| TV | Container | Notes |
+|---|---|---|
+| U8000F | `com.samsung.tv.bixby-promotion` / `BixbyPromotion` | |
+| QN80F | `com.samsung.tv.AICompanionUI` / `AICompanionUI` | No Bixby Promotion package; this one is store-updated, so turn off app auto-update |
+
+Inspect the candidate's registered `app_exec`, owner, SMACK label, privileges
+and update history first. The recipe requires the registered entry assembly,
+owner `201:0` and the label `User::Pkg::APP_ID::RO`. If the layout differs,
+stop and adapt the profile. Never put the container in a cleanup group.
 
 ```sh
 tv exec --script recipes/snapshot.sh --arg home-01
-tar -czf .local/package.tar.gz -C .local/package .
+COPYFILE_DISABLE=1 tar --no-xattrs -czf .local/package.tar.gz -C .local/package .
 tv push .local/package.tar.gz package.tar.gz
-tv exec --script recipes/install-launcher.sh --arg home-01
+tv exec --script recipes/install-launcher.sh --arg home-01 --arg CONTAINER_APP_ID --arg ENTRY_ASSEMBLY
 ```
 
-The recipe backs up the original package before replacing the assembly,
+The recipe backs up the original entry assembly before replacing it,
 moves the cached native image out of the execution path, installs resources,
-applies the package's observed SMACK label and requests a manual launch.
-It does not change Home/startup.
+reuses the original file's SMACK label and requests a manual launch. The
+container is recorded in `launcher-container.txt` for later updates and
+restoration. It does not change Home/startup.
+
+Later builds are installed with `update-launcher.sh`, which keeps each
+replaced version and refuses to run if the installed assembly no longer
+matches its recorded hash (for example after a vendor app update):
+
+```sh
+tv exec --script recipes/update-launcher.sh --arg apply --arg home-01 --arg visual-01
+tv exec --script recipes/update-launcher.sh --arg rollback --arg home-01 --arg visual-01
+```
 
 The new release recipes are a generalized form of the operations used on the
 original TV. Filesystem steps are not a single atomic transaction. If a step
@@ -104,14 +137,21 @@ case-study device; restoration must use the actual saved values.
 Only after the visible verification above:
 
 ```sh
-tv exec --command '/usr/bin/dotnet /opt/usr/share/quiet-tizen-backups/home-01/Probe.dll set-home com.samsung.tv.bixby-promotion'
-tv exec --command 'vconftool set -f -t string db/appfw/home_appid com.samsung.tv.bixby-promotion; vconftool set -f -t string db/appfw/startup_appid com.samsung.tv.bixby-promotion'
+tv exec --command '/usr/bin/dotnet /opt/usr/share/quiet-tizen-backups/home-01/Probe.dll set-home CONTAINER_APP_ID'
+tv exec --command 'vconftool set -f -t string db/appfw/home_appid CONTAINER_APP_ID; vconftool set -f -t string db/appfw/startup_appid CONTAINER_APP_ID'
 ```
 
-Read all three selectors back. Let temporary root cleanup finish, then
-restart with the remote. Check full boot, the Home button, standby/wake
+Read all three selectors back. Let temporary root cleanup finish, then do a
+real cold boot: on the QN80F, holding the remote's power button only entered
+quick standby (uptime did not reset), and Samsung's Home kept the Home key
+until the TV was unplugged. Check full boot, the Home button, standby/wake
 and return from a streaming app separately. Automatic startup was verified
-on the original TV; an OS update can change routing.
+on both TVs; an OS update can change routing.
+
+On a cold boot the startup launch can land behind the TV viewer, showing a
+black tuner screen until standby/wake. Quiet Home therefore raises itself
+and re-requests its launch every 3 seconds until first shown (up to six
+times), and records `boot_raise:N` in the state file.
 
 ## Replace the slow settings/sidebar path
 
@@ -128,8 +168,12 @@ After quick settings work, take a new snapshot and install the bridge:
 
 ```sh
 tv exec --script recipes/snapshot.sh --arg shell-01
-tv exec --script recipes/install-settings-bridge.sh --arg shell-01
+tv exec --script recipes/install-settings-bridge.sh --arg shell-01 --arg CONTAINER_APP_ID
 ```
+
+Only each key's unconditional rule (empty `on_selector`) is redirected. The
+QN80F has a second, conditional `XF86More` rule that pre-warms
+`org.tizen.function-osd`; it is left unchanged.
 
 This replaces `/opt/usr/apps/com.samsung.tv.quicklaunch/bin/QuickLaunch.dll`
 and updates two `key_filter` rules:

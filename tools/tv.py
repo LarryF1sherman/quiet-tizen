@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explicit-target access for the documented U8000F profile. See docs/02-access.md."""
+"""Explicit-target access for documented model/firmware profiles. See docs/02-access.md."""
 import argparse
 import asyncio
 import base64
@@ -19,7 +19,8 @@ sys.path.insert(0, str(ROOT / "vendor"))
 from samsung_tv_root.archive_root import probe, _check_target, _capture
 from samsung_tv_root.sdb import SdbClient, find_sdb
 
-PROFILE = json.loads((ROOT / "profiles/un75u8000ffxza-1300.9.json").read_text())
+PROFILES = {p["model"]: p for p in (json.loads(f.read_text()) for f in sorted((ROOT / "profiles").glob("*.json")))}
+PROFILE = PROFILES["UN75U8000FFXZA"]
 STAGE = "/home/owner/share/tmp/sdk_tools/quiet-tizen"
 
 
@@ -49,11 +50,19 @@ def observed_model(client):
 
 
 def check_identity(model, firmware):
-    if model != PROFILE["model"]:
+    profile = PROFILES.get(model)
+    if profile is None:
         raise ValueError(f"Unsupported model {model!r}; stop and investigate a separate profile.")
-    if firmware != PROFILE["firmware"]:
+    if firmware != profile["firmware"]:
         raise ValueError("Supply --firmware with the exact version read from About This TV. "
                          "Only the documented build is accepted. Do not guess this value.")
+    return profile
+
+
+def script_command(script, script_args):
+    # Decode on the TV; piping the encoded text itself into sh runs nothing useful.
+    encoded = base64.b64encode(script).decode()
+    return f"printf '%s' {shlex.quote(encoded)} | base64 -d | /bin/sh -s -- " + shlex.join(script_args)
 
 
 def pull_command(remote):
@@ -121,7 +130,9 @@ def main():
         print(_capture(client, "uname -srmo; readlink -f /usr/share/dotnet.tizen/netcoreapp"))
         print("Preflight only. Firmware must be read on the TV; root is not yet confirmed.")
         return
-    check_identity(model, args.firmware)
+    profile = check_identity(model, args.firmware)
+    if profile.get("status") == "inventory-only" and args.action == "push":
+        raise ValueError("This profile is inventory-only; installation uploads are not enabled.")
     if args.action == "push":
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,100}", args.name):
             raise ValueError("Use a simple staging filename without directory components.")
@@ -145,8 +156,7 @@ def main():
         script = args.script.read_bytes()
         if len(script) > 45000:
             raise ValueError("Script too large for the bounded command channel; split into phases.")
-        encoded = base64.b64encode(script).decode()
-        command = f"printf '%s' {shlex.quote(encoded)} | /bin/sh -s -- " + shlex.join(args.arg)
+        command = script_command(script, args.arg)
     else:
         if args.arg:
             raise ValueError("--arg requires --script.")

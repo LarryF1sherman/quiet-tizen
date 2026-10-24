@@ -1,9 +1,11 @@
 #!/bin/sh
-# Run only after Quiet Home and its quick settings work. Pass a NEW snapshot name.
+# Run only after Quiet Home and its quick settings work.
+# Input: NEW_SNAPSHOT_NAME QUIET_HOME_CONTAINER_APP_ID
 set -eu
 test "$(id -u)" = 0
-name=${1:?Snapshot name required}
+name=${1:?Snapshot name required}; home=${2:?Quiet Home container app ID required}
 case "$name" in ''|*[!A-Za-z0-9_-]*) exit 1;; esac
+case "$home" in ''|.*|*[!A-Za-z0-9_.-]*) exit 1;; esac
 D=/opt/usr/share/quiet-tizen-backups/$name
 Q=/opt/usr/apps/com.samsung.tv.quicklaunch
 S=/home/owner/share/tmp/sdk_tools/quiet-tizen/unpacked
@@ -12,10 +14,13 @@ test -s "$S/QuickLaunch.dll"
 test -s "$Q/bin/QuickLaunch.dll"
 test "$(stat -c %u:%g "$Q/bin/QuickLaunch.dll")" = 201:0
 test ! -e "$D/QuickLaunch-before.dll"
-# Inspect semantic identities, not row numbers from another TV.
-test "$(sqlite3 -readonly /opt/dbspace/.app-context.db "SELECT count(*) FROM key_filter WHERE appid='com.samsung.tv.quicklaunch' AND key='XF86More';")" = 1
-test "$(sqlite3 -readonly /opt/dbspace/.app-context.db "SELECT count(*) FROM key_filter WHERE appid='org.tizen.menu' AND key='XF86SysMenu';")" = 1
+test "$(sqlite3 -readonly /opt/dbspace/.pkgmgr_parser.db "SELECT count(*) FROM package_app_info WHERE app_id='$home';")" = 1
+# Inspect semantic identities, not row numbers from another TV. Only the unconditional
+# row of each key is redirected; conditional rows (e.g. function-osd pre-warm) stay.
+test "$(sqlite3 -readonly /opt/dbspace/.app-context.db "SELECT count(*) FROM key_filter WHERE appid='com.samsung.tv.quicklaunch' AND key='XF86More' AND IFNULL(on_selector,'')='';")" = 1
+test "$(sqlite3 -readonly /opt/dbspace/.app-context.db "SELECT count(*) FROM key_filter WHERE appid='org.tizen.menu' AND key='XF86SysMenu' AND IFNULL(on_selector,'')='';")" = 1
 cp -a "$Q/bin/QuickLaunch.dll" "$D/QuickLaunch-before.dll"
+printf 'package:%s\n' "$home" > "$D/bridge-target.txt"
 app_launcher -u 5001 -k com.samsung.tv.quicklaunch || true
 if [ -d "$Q/bin/.native_image" ]; then mv "$Q/bin/.native_image" "$D/quicklaunch-native-image"; fi
 cp "$S/QuickLaunch.dll" "$Q/bin/QuickLaunch.dll"
@@ -27,11 +32,11 @@ sqlite3 -bail /opt/dbspace/.app-context.db <<SQL
 ATTACH '$D/.app-context.db' AS before;
 BEGIN IMMEDIATE;
 CREATE TEMP TABLE guard(ok INTEGER CHECK(ok=1));
-INSERT INTO guard SELECT count(*)=2 FROM key_filter live JOIN before.key_filter old ON live.appid=old.appid AND live.key=old.key
-WHERE ((live.appid='com.samsung.tv.quicklaunch' AND live.key='XF86More') OR (live.appid='org.tizen.menu' AND live.key='XF86SysMenu'))
+INSERT INTO guard SELECT count(*)=2 FROM key_filter live JOIN before.key_filter old ON live.appid=old.appid AND live.key=old.key AND IFNULL(old.on_selector,'')=''
+WHERE ((live.appid='com.samsung.tv.quicklaunch' AND live.key='XF86More') OR (live.appid='org.tizen.menu' AND live.key='XF86SysMenu')) AND IFNULL(live.on_selector,'')=''
 AND live.target_selector IS old.target_selector AND live.args IS old.args;
-UPDATE key_filter SET target_selector='package:com.samsung.tv.bixby-promotion',args='quiet_page:settings __K_SPLASH_SCREEN:LA_UI_VR_TRANSPARENT'
-WHERE (appid='com.samsung.tv.quicklaunch' AND key='XF86More') OR (appid='org.tizen.menu' AND key='XF86SysMenu');
+UPDATE key_filter SET target_selector='package:$home',args='quiet_page:settings __K_SPLASH_SCREEN:LA_UI_VR_TRANSPARENT'
+WHERE ((appid='com.samsung.tv.quicklaunch' AND key='XF86More') OR (appid='org.tizen.menu' AND key='XF86SysMenu')) AND IFNULL(on_selector,'')='';
 DROP TABLE guard;
 COMMIT;
 SQL

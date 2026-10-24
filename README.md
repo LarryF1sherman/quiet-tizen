@@ -69,9 +69,18 @@ Root access is reacquired from the computer when maintenance requires it.
 | Netflix | More available memory after closing background apps; perceived input lag **not yet confirmed fixed** |
 
 The native launcher and underlying techniques were exercised on that TV.
-The **generalized scripts in this public release were checked locally and
-compiled where applicable; they have not been replayed end-to-end on a second
-TV**. This matters especially for private Samsung APIs and registry schemas.
+
+A second TV, **`QE55QN80FAUXXH`** on firmware **`T-PTMFDEUC-0090-1301.0`**
+(same Tizen 9.0 / Linux 5.4.261 / .NET 6.0.9 platform), was then set up with
+the generalized scripts: inventory, install, Home/startup, the settings
+bridge, and the advertising, voice, context and light-shell groups, each
+from its own snapshot, with cold-boot checks. It needed a different launcher
+container (`AICompanionUI`; Bixby Promotion is absent), its own cleanup
+profile and a fix to `tv.py --script`, which previously ran nothing. ACR's
+`contents-recognition-service` has no stop condition there and stays
+running unless Samsung's Viewing Information opt-out is used. See
+[profiles/qe55qn80fauxxh-1301.0.json](profiles/qe55qn80fauxxh-1301.0.json).
+Neither profile proves compatibility for a third model.
 
 ## Walkthrough
 
