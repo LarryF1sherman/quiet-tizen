@@ -1,0 +1,83 @@
+[
+  {
+    "Name": "Netflix",
+    "Id": "org.tizen.netflix-app",
+    "Asset": "app-icons/netflix.svg",
+    "Description": "Movies & series",
+    "Fit": "contain",
+    "Background": "#FFFFFF",
+    "Width": 370,
+    "Height": 100
+  },
+  {
+    "Name": "YouTube",
+    "Id": "com.samsung.tv.cobalt-yt",
+    "Asset": "app-icons/youtube.jpg",
+    "Description": "Videos",
+    "Fit": "cover",
+    "Background": "#FFFFFF",
+    "Width": 1920,
+    "Height": 1080
+  },
+  {
+    "Name": "Prime Video",
+    "Id": "org.tizen.primevideo",
+    "Asset": "app-icons/prime-video.svg",
+    "Description": "Movies & series",
+    "Fit": "contain",
+    "Background": "#0779FF",
+    "Width": 846,
+    "Height": 266
+  },
+  {
+    "Name": "HBO Max",
+    "Id": "5b8c3eb16b.BeamCTVDev",
+    "Asset": "app-icons/hbo-max.png",
+    "Description": "Movies & series",
+    "Fit": "cover",
+    "Background": "#111318",
+    "Width": 1024,
+    "Height": 1024
+  },
+  {
+    "Name": "Disney+",
+    "Id": "MCmYXNxgcu.DisneyPlus",
+    "Asset": "app-icons/disney-plus.jpg",
+    "Description": "Movies & series",
+    "Fit": "cover",
+    "Background": "#023D4A",
+    "Width": 1920,
+    "Height": 1080
+  },
+  {
+    "Name": "Oneplay",
+    "Id": "JIFtSZfRwy.voyoTizenCZ",
+    "Asset": "app-icons/oneplay.png",
+    "Description": "Movies, series & TV",
+    "Fit": "cover",
+    "Background": "#0B0F5C",
+    "Width": 1200,
+    "Height": 630
+  },
+  {
+    "Name": "Spotify",
+    "Id": "rJeHak5zRg.Spotify",
+    "Asset": "app-icons/spotify.svg",
+    "Description": "Music & podcasts",
+    "Fit": "contain",
+    "Background": "#1ED760",
+    "Width": 824,
+    "Height": 226
+  },
+  {
+    "Name": "Get more apps",
+    "Id": "org.volt.apps",
+    "Asset": "glass-button.svg",
+    "Description": "Open Samsung Apps",
+    "Fit": "cover",
+    "Background": "#2A2D3A",
+    "Width": 100,
+    "Height": 112,
+    "Utility": true
+  }
+]

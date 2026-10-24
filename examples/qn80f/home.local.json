@@ -1,0 +1,56 @@
+{
+  "Theme": "dark",
+  "Clock": "HH:mm  ·  dd.MM.yy",
+  "Hero": {
+    "Label": "PlayStation 5",
+    "Action": "hdmi:16",
+    "Description": "Game console · HDMI 4",
+    "Image": "feature-ps5-backdrop.svg",
+    "Icon": "app-icons/ps5-symbols.png",
+    "Kicker": "PLAYSTATION 5",
+    "Headline": "Let's play.",
+    "Subline": "Switch to HDMI 4"
+  },
+  "Portraits": [
+    {
+      "Label": "HBO Max",
+      "Action": "app:5b8c3eb16b.BeamCTVDev",
+      "Description": "Movies & series"
+    },
+    {
+      "Label": "Oneplay",
+      "Action": "app:JIFtSZfRwy.voyoTizenCZ",
+      "Description": "Movies, series & TV"
+    }
+  ],
+  "Dock": [
+    {
+      "Label": "HBO Max",
+      "Action": "app:5b8c3eb16b.BeamCTVDev"
+    },
+    {
+      "Label": "Oneplay",
+      "Action": "app:JIFtSZfRwy.voyoTizenCZ"
+    },
+    {
+      "Label": "YouTube",
+      "Action": "app:com.samsung.tv.cobalt-yt",
+      "Fallback": "youtube"
+    },
+    {
+      "Label": "PlayStation 5",
+      "Action": "hdmi:16",
+      "Fallback": "ps5"
+    },
+    {
+      "Label": "Disney+",
+      "Action": "app:MCmYXNxgcu.DisneyPlus"
+    },
+    {
+      "Label": "Your Apps",
+      "Action": "page:1",
+      "Fallback": "apps"
+    }
+  ],
+  "VoiceKey": "app:rJeHak5zRg.Spotify"
+}

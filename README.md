@@ -79,7 +79,8 @@ container (`AICompanionUI`; Bixby Promotion is absent), its own cleanup
 profile and a fix to `tv.py --script`, which previously ran nothing. ACR's
 `contents-recognition-service` has no stop condition there and stays
 running unless Samsung's Viewing Information opt-out is used. See
-[profiles/qe55qn80fauxxh-1301.0.json](profiles/qe55qn80fauxxh-1301.0.json).
+[profiles/qe55qn80fauxxh-1301.0.json](profiles/qe55qn80fauxxh-1301.0.json). Its dark layout and app list are in
+[examples/qn80f](examples/qn80f/README.md).
 Neither profile proves compatibility for a third model.
 
 ## Walkthrough

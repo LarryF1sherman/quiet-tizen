@@ -21,3 +21,5 @@ jobs:
         run: python3 tools/build.py payloads
       - name: Test native catalog logic without Samsung references
         run: dotnet run --project tests/CatalogTests.csproj -- launcher/assets/apps.json
+      - name: Validate the QN80F example layout and catalog
+        run: dotnet run --project tests/CatalogTests.csproj -- examples/qn80f/apps.local.json examples/qn80f/home.local.json
